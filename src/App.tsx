@@ -7,7 +7,6 @@ import React, {
 } from 'react';
 
 import './App.scss';
-import { PersonalInfo } from './components/PersonalInfo';
 import {
     parsePathCustomThemeId,
     parsePathThemeName,
@@ -16,28 +15,9 @@ import {
 } from './utils';
 import { defaultTheme } from './themes/default';
 import { Icon, Theme } from './themes/interface';
-import { fishermanTheme } from './themes/fisherman';
-import { jinlunTheme } from './themes/jinlun';
-import { ikunTheme } from './themes/ikun';
-import { pddTheme } from './themes/pdd';
-import { BeiAn } from './components/BeiAn';
-import { Info } from './components/Info';
-import { owTheme } from './themes/ow';
-import { ConfigDialog } from './components/ConfigDialog';
-import Bmob from 'hydrogen-js-sdk';
-
-// 内置主题
-const builtInThemes: Theme<any>[] = [
-    defaultTheme,
-    fishermanTheme,
-    jinlunTheme,
-    ikunTheme,
-    pddTheme,
-    owTheme,
-];
 
 // 最大关卡
-const maxLevel = 50;
+const maxLevel = 20;
 
 interface MySymbol {
     id: string;
@@ -185,7 +165,6 @@ const customThemeIdFromPath = parsePathCustomThemeId(location.href);
 
 const App: FC = () => {
     const [curTheme, setCurTheme] = useState<Theme<any>>(defaultTheme);
-    const [themes, setThemes] = useState<Theme<any>[]>(builtInThemes);
 
     const [scene, setScene] = useState<Scene>(makeScene(1, curTheme.icons));
     const [level, setLevel] = useState<number>(1);
@@ -196,7 +175,8 @@ const App: FC = () => {
     const [finished, setFinished] = useState<boolean>(false);
     const [tipText, setTipText] = useState<string>('');
     const [animating, setAnimating] = useState<boolean>(false);
-    const [configDialogShow, setConfigDialogShow] = useState<boolean>(false);
+
+    const [gameMode, setGameMode] = useState<number>(0); // 0 - 待选择 ； 1 - 排行模式； 2 - 自定义模式
 
     // 音效
     const soundRefMap = useRef<Record<string, HTMLAudioElement>>({});
@@ -214,55 +194,6 @@ const App: FC = () => {
             bgmRef.current?.pause();
         }
     }, [bgmOn]);
-
-    // 初始化主题
-    useEffect(() => {
-        if (customThemeIdFromPath) {
-            // 自定义主题
-            Bmob.Query('config')
-                .get(customThemeIdFromPath)
-                .then((res) => {
-                    // @ts-ignore
-                    const { content } = res;
-
-                    try {
-                        const customTheme = JSON.parse(content);
-                        setThemes([...themes, customTheme]);
-                        setCurTheme(customTheme);
-                    } catch (e) {
-                        console.log(e);
-                    }
-                })
-                .catch((e) => {
-                    console.log(e);
-                });
-        } else if (themeFromPath) {
-            // 内置主题
-            setCurTheme(
-                themes.find((theme) => theme.name === themeFromPath) ??
-                    defaultTheme
-            );
-        }
-    }, []);
-
-    // 主题切换
-    useEffect(() => {
-        // 初始化时不加载bgm
-        if (once) {
-            setBgmOn(false);
-            setTimeout(() => {
-                setBgmOn(true);
-            }, 300);
-        }
-        restart();
-        // 更改路径query
-        if (customThemeIdFromPath) return;
-        history.pushState(
-            {},
-            curTheme.title,
-            `/?theme=${encodeURIComponent(curTheme.name)}`
-        );
-    }, [curTheme]);
 
     // 队列区排序
     useEffect(() => {
@@ -466,36 +397,10 @@ const App: FC = () => {
         setAnimating(false);
     };
 
-    // 自定义整活
-    const customZhenghuo = (theme: Theme<string>) => {
-        setCurTheme(theme);
-    };
-
     return (
         <>
             <h2>{curTheme.title}</h2>
-            <p>
-                <PersonalInfo />
-            </p>
-            <h3 className="flex-container flex-center">
-                主题:
-                {/*TODO themes维护方式调整*/}
-                <select
-                    value={themes.findIndex(
-                        (theme) => theme.name === curTheme.name
-                    )}
-                    onChange={(e) =>
-                        setCurTheme(themes[Number(e.target.value)])
-                    }
-                >
-                    {themes.map((t, idx) => (
-                        <option key={t.name} value={idx}>
-                            {t.name}
-                        </option>
-                    ))}
-                </select>
-                Level: {level}
-            </h3>
+            <h3 className="flex-container flex-center">Level: {level}</h3>
 
             {curTheme.desc}
 
@@ -521,47 +426,22 @@ const App: FC = () => {
                 </div>
             </div>
             <div className="queue-container flex-container flex-center" />
-            <div className="flex-container flex-between">
-                <button className="flex-grow" onClick={pop}>
-                    弹出
-                </button>
-                <button className="flex-grow" onClick={undo}>
-                    撤销
-                </button>
-                <button className="flex-grow" onClick={wash}>
-                    洗牌
-                </button>
-                <button className="flex-grow" onClick={levelUp}>
-                    下一关
-                </button>
-                {/*<button onClick={test}>测试</button>*/}
-            </div>
-
-            <button
-                onClick={() => setConfigDialogShow(true)}
-                className="zhenghuo-button primary"
-            >
-                我要整活
-            </button>
-
-            <Info />
-
-            <BeiAn />
-
-            {/*提示弹窗*/}
-            {finished && (
-                <div className="modal">
-                    <h1>{tipText}</h1>
-                    <button onClick={restart}>再来一次</button>
+            {gameMode === 2 ? (
+                <div className="flex-container flex-between">
+                    <button className="flex-grow" onClick={pop}>
+                        弹出
+                    </button>
+                    <button className="flex-grow" onClick={undo}>
+                        撤销
+                    </button>
+                    <button className="flex-grow" onClick={wash}>
+                        洗牌
+                    </button>
+                    <button className="flex-grow" onClick={levelUp}>
+                        下一关
+                    </button>
                 </div>
-            )}
-
-            {/*自定义主题弹窗*/}
-            <ConfigDialog
-                show={configDialogShow}
-                closeMethod={() => setConfigDialogShow(false)}
-                previewMethod={customZhenghuo}
-            />
+            ) : null}
 
             {/*bgm*/}
             <button className="bgm-button" onClick={() => setBgmOn(!bgmOn)}>
@@ -572,6 +452,36 @@ const App: FC = () => {
                     src={curTheme?.bgm || '/sound-disco.mp3'}
                 />
             </button>
+
+            {gameMode === 0 && (
+                <div className="modal startup-modal">
+                    <h1>请选择玩法</h1>
+                    <button
+                        onClick={() => {
+                            setGameMode(1);
+                            restart();
+                        }}
+                    >
+                        排位模式
+                    </button>
+                    <button
+                        onClick={() => {
+                            setGameMode(2);
+                            restart();
+                        }}
+                    >
+                        自定义模式
+                    </button>
+                </div>
+            )}
+
+            {/*提示弹窗*/}
+            {finished && (
+                <div className="modal">
+                    <h1>{tipText}</h1>
+                    <button onClick={restart}>再来一次</button>
+                </div>
+            )}
 
             {/*音效*/}
             {curTheme.sounds.map((sound) => (

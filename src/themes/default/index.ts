@@ -29,7 +29,7 @@ export const defaultSounds: Theme<DefaultSoundNames>['sounds'] = [
 ];
 
 export const defaultTheme: Theme<DefaultSoundNames> = {
-    title: '有解的羊了个羊(DEMO)',
+    title: '说了个说',
     name: '默认',
     icons: icons.map((icon) => ({
         name: icon,

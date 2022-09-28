@@ -81,7 +81,17 @@
     background-color: rgb(0 0 0 / 10%);
     top: 0;
     left: 0;
+
+    &.startup-modal {
+        justify-content: flex-start;
+
+    }
+
+    > button {
+        margin-top: 16px;
+    }
 }
+
 
 .bgm-button {
     position: fixed;
