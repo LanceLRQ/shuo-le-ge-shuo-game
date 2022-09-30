@@ -6,6 +6,7 @@ import React, {
     useRef,
     useState,
 } from 'react';
+import { get } from 'lodash';
 
 import './App.scss';
 import {
@@ -17,6 +18,8 @@ import {
 import { defaultTheme } from './themes/default';
 import { Icon, Theme } from './themes/interface';
 import dayjs, { Dayjs } from 'dayjs';
+import API from './api';
+import { Base64 } from 'js-base64';
 import duration from 'dayjs/plugin/duration';
 dayjs.extend(duration);
 
@@ -184,6 +187,7 @@ const App: FC = () => {
     >({});
     const [finished, setFinished] = useState<boolean>(false);
     const [tipText, setTipText] = useState<string>('');
+    const [rankTipText, setRankTipText] = useState<string>('');
     const [animating, setAnimating] = useState<boolean>(false);
 
     const [gameMode, setGameMode] = useState<number>(0); // 0 - 待选择 ； 1 - 排行模式； 2 - 自定义模式
@@ -191,13 +195,13 @@ const App: FC = () => {
     const [gameTimeText, setGameTimeText] = useState<string>('');
     const gameTimeUseRef = useRef<any>({ start: dayjs(), end: dayjs() });
     const [score, setScore] = useState<number>(0);
-    const [diffLevel, setDiffLevel] = useState<number>(0);
     const [gameLevels, setGameLevels] = useState<number[]>([]);
     const [gameLevelsCur, setGameLevelsCur] = useState<number>(0);
     const [gameScoreRange, setGameScoreRange] = useState<number>(1);
     const [gamePopTimesRemain, setGamePopTimesRemain] = useState<number>(0);
     const [gameWashTimesRemain, setGameWashTimesRemain] = useState<number>(0);
     const [gameUndoTimesRemain, setGameUndoTimesRemain] = useState<number>(0);
+    const [gameToken, setGameToken] = useState<string>('');
 
     // 音效
     const soundRefMap = useRef<Record<string, HTMLAudioElement>>({});
@@ -206,6 +210,19 @@ const App: FC = () => {
     const bgmRef = useRef<HTMLAudioElement>(null);
     const [bgmOn, setBgmOn] = useState<boolean>(false);
     const [once, setOnce] = useState<boolean>(false);
+    const [userName, setUserName] = useState<string>('');
+
+    useEffect(() => {
+        // 初始化游戏
+        API.InitGame({})
+            .then((resp) => {
+                setUserName(get(resp, 'name'));
+            })
+            .catch((e) => {
+                console.error(e.message);
+            });
+    }, []);
+
     useEffect(() => {
         if (!bgmRef.current) return;
         if (bgmOn) {
@@ -250,6 +267,40 @@ const App: FC = () => {
         if (!confirm('确定要结束游戏吗？分数将被提交')) return;
         setTipText('游戏结束');
         setFinished(true);
+    };
+
+    const reportGame = () => {
+        const timeUsed = Math.ceil(
+            gameTimeUseRef.current.end.diff(gameTimeUseRef.current.start) / 1000
+        );
+        if (timeUsed <= 120) {
+            setRankTipText('游戏时长小于2分钟，不计入排行榜');
+            return;
+        }
+        setRankTipText('正在计算结果...');
+        const resp = API.FinishGame({
+            data: {
+                token: gameToken,
+                data: Base64.encode(score + '|' + timeUsed),
+            },
+        })
+            .then((resp) => {
+                const s = get(resp, 'score');
+                const total = get(resp, 'total') * 1;
+                const rank = get(resp, 'rank') * 1;
+                const percent = total > 0 ? (rank / total) * 100 : 0;
+                setRankTipText(
+                    '最终得分：' +
+                        s +
+                        '，打败了' +
+                        percent.toFixed(2) +
+                        '%的水晶蟹'
+                );
+            })
+            .catch((e) => {
+                alert(e.message);
+                setRankTipText('');
+            });
     };
 
     // 向后检查覆盖
@@ -465,6 +516,9 @@ const App: FC = () => {
         if (updateQueue.length === 7) {
             setTipText('游戏结束');
             setFinished(true);
+            if (gameMode === 1) {
+                reportGame();
+            }
         }
 
         if (!updateScene.find((s) => s.status !== 2)) {
@@ -478,8 +532,8 @@ const App: FC = () => {
                         clearTimeout(gameTimer.current);
                         gameTimer.current = null;
                     }
-                    // TODO report;
                     setFinished(true);
+                    reportGame();
                     return;
                 }
                 targetLevel = gameLevels[gameLevelsCur] + 1;
@@ -505,26 +559,51 @@ const App: FC = () => {
 
     const chooseGameMode = (type: number, diff: number) => () => {
         if (type == 1) {
-            setGameMode(1);
-            setScore(0);
-            setDiffLevel(diff);
-            const opt: any = RankDiffOptions[diff];
-            setGameLevels(opt.levels);
-            setGameScoreRange(opt.range);
-            setGamePopTimesRemain(opt.pop);
-            setGameWashTimesRemain(opt.wash);
-            setGameUndoTimesRemain(opt.undo);
-            setGameLevelsCur(0);
-            setGameTimeText('00:00:00');
-            gameTimeUseRef.current = {
-                start: dayjs(),
-                end: dayjs(),
-            };
-            restart(opt.levels[0]);
+            API.StartGame({})
+                .then((resp) => {
+                    setGameToken(resp + '');
+                    setGameMode(1);
+                    setScore(0);
+                    const opt: any = RankDiffOptions[diff];
+                    setGameLevels(opt.levels);
+                    setGameScoreRange(opt.range);
+                    setGamePopTimesRemain(opt.pop);
+                    setGameWashTimesRemain(opt.wash);
+                    setGameUndoTimesRemain(opt.undo);
+                    setGameLevelsCur(0);
+                    setGameTimeText('00:00:00');
+                    gameTimeUseRef.current = {
+                        start: dayjs(),
+                        end: dayjs(),
+                    };
+                    restart(opt.levels[0]);
+                })
+                .catch((e) => {
+                    alert(e.message);
+                });
         } else {
             setGameMode(2);
             restart();
         }
+    };
+
+    const changeUserName = () => {
+        const uname = prompt('请输入新的名字，10个字符内', userName);
+        if (uname == null || !(uname + '').trim()) {
+            return;
+        }
+        API.ChangeName({
+            data: {
+                name: uname,
+            },
+        })
+            .then(() => {
+                alert('修改成功');
+                setUserName(uname);
+            })
+            .catch((e) => {
+                alert(e.message);
+            });
     };
 
     return (
@@ -538,6 +617,18 @@ const App: FC = () => {
                     src={curTheme?.bgm || '/sound-disco.mp3'}
                 />
             </button>
+
+            <div className="player-name">
+                <a
+                    href="javascript:void(0)"
+                    onClick={changeUserName}
+                    style={{ marginRight: '8px' }}
+                >
+                    ✏️
+                </a>
+                {userName}
+            </div>
+
             <h2>{curTheme.title}</h2>
             <h3 className="flex-container flex-center game-status-box">
                 {gameMode == 1 ? (
@@ -637,7 +728,12 @@ const App: FC = () => {
                 <div className="modal">
                     <h1>{tipText}</h1>
                     {gameMode == 1 ? (
-                        <button>查看排行榜</button>
+                        <>
+                            <div style={{ marginBottom: '16px' }}>
+                                {rankTipText}
+                            </div>
+                            <button>查看排行榜</button>
+                        </>
                     ) : (
                         <button onClick={() => restart()}>再来一次</button>
                     )}
