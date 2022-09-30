@@ -1,6 +1,7 @@
 import React, {
     FC,
     MouseEventHandler,
+    SetStateAction,
     useEffect,
     useRef,
     useState,
@@ -15,6 +16,9 @@ import {
 } from './utils';
 import { defaultTheme } from './themes/default';
 import { Icon, Theme } from './themes/interface';
+import dayjs, { Dayjs } from 'dayjs';
+import duration from 'dayjs/plugin/duration';
+dayjs.extend(duration);
 
 // 最大关卡
 const maxLevel = 20;
@@ -159,9 +163,15 @@ const Symbol: FC<SymbolProps> = ({ x, y, icon, isCover, status, onClick }) => {
     );
 };
 
-// 从url初始化主题
-const themeFromPath: string = parsePathThemeName(location.href);
-const customThemeIdFromPath = parsePathCustomThemeId(location.href);
+export interface RankDiffOptionsType {
+    [key: number]: any;
+}
+// 配置排位难度
+const RankDiffOptions: RankDiffOptionsType = {
+    1: { levels: [1, 2, 3], range: 3, pop: 0, wash: 3, undo: 15 },
+    2: { levels: [3, 4, 5], range: 6, pop: 0, wash: 3, undo: 20 },
+    3: { levels: [7, 8, 9], range: 9, pop: 0, wash: 3, undo: 30 },
+};
 
 const App: FC = () => {
     const [curTheme, setCurTheme] = useState<Theme<any>>(defaultTheme);
@@ -177,6 +187,17 @@ const App: FC = () => {
     const [animating, setAnimating] = useState<boolean>(false);
 
     const [gameMode, setGameMode] = useState<number>(0); // 0 - 待选择 ； 1 - 排行模式； 2 - 自定义模式
+    const gameTimer = useRef<SetStateAction<any>>(null);
+    const [gameTimeText, setGameTimeText] = useState<string>('');
+    const gameTimeUseRef = useRef<any>({ start: dayjs(), end: dayjs() });
+    const [score, setScore] = useState<number>(0);
+    const [diffLevel, setDiffLevel] = useState<number>(0);
+    const [gameLevels, setGameLevels] = useState<number[]>([]);
+    const [gameLevelsCur, setGameLevelsCur] = useState<number>(0);
+    const [gameScoreRange, setGameScoreRange] = useState<number>(1);
+    const [gamePopTimesRemain, setGamePopTimesRemain] = useState<number>(0);
+    const [gameWashTimesRemain, setGameWashTimesRemain] = useState<number>(0);
+    const [gameUndoTimesRemain, setGameUndoTimesRemain] = useState<number>(0);
 
     // 音效
     const soundRefMap = useRef<Record<string, HTMLAudioElement>>({});
@@ -225,6 +246,12 @@ const App: FC = () => {
         checkCover(scene);
     }, []);
 
+    const brokeGame = () => {
+        if (!confirm('确定要结束游戏吗？分数将被提交')) return;
+        setTipText('游戏结束');
+        setFinished(true);
+    };
+
     // 向后检查覆盖
     const checkCover = (scene: Scene) => {
         const updateScene = scene.slice();
@@ -257,9 +284,19 @@ const App: FC = () => {
     // 弹出
     const pop = () => {
         if (!queue.length) return;
+        if (gameMode === 1) {
+            if (gamePopTimesRemain <= 0) {
+                alert('没有弹出机会了');
+                return;
+            }
+            if (!confirm('是否要使用弹出？')) {
+                return;
+            }
+        }
         const updateQueue = queue.slice();
         const symbol = updateQueue.shift();
         if (!symbol) return;
+        if (gameMode === 1) setGamePopTimesRemain(gamePopTimesRemain - 1);
         const find = scene.find((s) => s.id === symbol.id);
         if (find) {
             setQueue(updateQueue);
@@ -278,9 +315,19 @@ const App: FC = () => {
     // 撤销
     const undo = () => {
         if (!queue.length) return;
+        if (gameMode === 1) {
+            if (gameUndoTimesRemain <= 0) {
+                alert('没有撤销机会了');
+                return;
+            }
+            if (!confirm('是否要使用撤销？')) {
+                return;
+            }
+        }
         const updateQueue = queue.slice();
         const symbol = updateQueue.pop();
         if (!symbol) return;
+        if (gameMode === 1) setGameUndoTimesRemain(gameUndoTimesRemain - 1);
         const find = scene.find((s) => s.id === symbol.id);
         if (find) {
             setQueue(updateQueue);
@@ -296,6 +343,16 @@ const App: FC = () => {
 
     // 洗牌
     const wash = () => {
+        if (gameMode === 1) {
+            if (gameWashTimesRemain <= 0) {
+                alert('没有洗牌机会了');
+                return;
+            }
+            if (!confirm('是否要使用洗牌？')) {
+                return;
+            }
+            setGameWashTimesRemain(gameWashTimesRemain - 1);
+        }
         checkCover(washScene(level, scene));
         // 音效
         if (soundRefMap.current?.['sound-wash']) {
@@ -306,21 +363,30 @@ const App: FC = () => {
 
     // 加大难度
     const levelUp = () => {
-        if (level >= maxLevel) {
-            return;
+        let targetLevel = level + 1;
+        if (gameMode == 1) {
+            if (gameLevelsCur + 1 >= gameLevels.length) {
+                return;
+            }
+            targetLevel = gameLevels[gameLevelsCur] + 1;
+            setGameLevelsCur(gameLevelsCur + 1);
+        } else {
+            if (level >= maxLevel) {
+                return;
+            }
         }
+        setLevel(targetLevel);
         setFinished(false);
-        setLevel(level + 1);
         setQueue([]);
-        checkCover(makeScene(level + 1, curTheme.icons));
+        checkCover(makeScene(targetLevel, curTheme.icons));
     };
 
     // 重开
-    const restart = () => {
+    const restart = (lv = 1) => {
         setFinished(false);
-        setLevel(1);
+        setLevel(lv);
         setQueue([]);
-        checkCover(makeScene(1, curTheme.icons));
+        checkCover(makeScene(lv, curTheme.icons));
     };
 
     // 点击item
@@ -330,6 +396,26 @@ const App: FC = () => {
         if (!once) {
             setBgmOn(true);
             setOnce(true);
+        }
+
+        // 点击方块才开始计时
+        if (gameMode == 1 && !gameTimer.current) {
+            gameTimeUseRef.current = {
+                start: dayjs(),
+                end: dayjs(),
+            };
+            gameTimer.current = setInterval(() => {
+                gameTimeUseRef.current.end = dayjs();
+                setGameTimeText(
+                    dayjs
+                        .duration(
+                            gameTimeUseRef.current.end.diff(
+                                gameTimeUseRef.current.start
+                            )
+                        )
+                        .format('HH:mm:ss')
+                );
+            }, 1000);
         }
 
         const updateScene = scene.slice();
@@ -361,6 +447,9 @@ const App: FC = () => {
                 const find = updateScene.find((i) => i.id === sb.id);
                 if (find) {
                     find.status = 2;
+                    if (gameMode == 1) {
+                        setScore(score + gameScoreRange);
+                    }
                     // 三连音效
                     if (soundRefMap.current) {
                         soundRefMap.current[
@@ -374,21 +463,38 @@ const App: FC = () => {
 
         // 输了
         if (updateQueue.length === 7) {
-            setTipText('失败了');
+            setTipText('游戏结束');
             setFinished(true);
         }
 
         if (!updateScene.find((s) => s.status !== 2)) {
-            // 胜利
-            if (level === maxLevel) {
-                setTipText('完成挑战');
-                setFinished(true);
-                return;
-            }
+            let targetLevel = level + 1;
             // 升级
-            setLevel(level + 1);
+            if (gameMode == 1) {
+                // 胜利
+                if (gameLevelsCur + 1 >= gameLevels.length) {
+                    setTipText('挑战成功！');
+                    if (gameTimer.current) {
+                        clearTimeout(gameTimer.current);
+                        gameTimer.current = null;
+                    }
+                    // TODO report;
+                    setFinished(true);
+                    return;
+                }
+                targetLevel = gameLevels[gameLevelsCur] + 1;
+                setLevel(targetLevel);
+                setGameLevelsCur(gameLevelsCur + 1);
+            } else {
+                // 胜利
+                if (level === maxLevel) {
+                    setTipText('完成挑战');
+                    setFinished(true);
+                    return;
+                }
+            }
             setQueue([]);
-            checkCover(makeScene(level + 1, curTheme.icons));
+            checkCover(makeScene(targetLevel, curTheme.icons));
         } else {
             setQueue(updateQueue);
             checkCover(updateScene);
@@ -397,10 +503,62 @@ const App: FC = () => {
         setAnimating(false);
     };
 
+    const chooseGameMode = (type: number, diff: number) => () => {
+        if (type == 1) {
+            setGameMode(1);
+            setScore(0);
+            setDiffLevel(diff);
+            const opt: any = RankDiffOptions[diff];
+            setGameLevels(opt.levels);
+            setGameScoreRange(opt.range);
+            setGamePopTimesRemain(opt.pop);
+            setGameWashTimesRemain(opt.wash);
+            setGameUndoTimesRemain(opt.undo);
+            setGameLevelsCur(0);
+            setGameTimeText('00:00:00');
+            gameTimeUseRef.current = {
+                start: dayjs(),
+                end: dayjs(),
+            };
+            restart(opt.levels[0]);
+        } else {
+            setGameMode(2);
+            restart();
+        }
+    };
+
     return (
         <>
+            {/*bgm*/}
+            <button className="bgm-button" onClick={() => setBgmOn(!bgmOn)}>
+                {bgmOn ? '🔊' : '🔈'}
+                <audio
+                    ref={bgmRef}
+                    loop
+                    src={curTheme?.bgm || '/sound-disco.mp3'}
+                />
+            </button>
             <h2>{curTheme.title}</h2>
-            <h3 className="flex-container flex-center">Level: {level}</h3>
+            <h3 className="flex-container flex-center game-status-box">
+                {gameMode == 1 ? (
+                    <>
+                        <div className="game-status-tag">
+                            第<span>{gameLevelsCur + 1}</span>关
+                        </div>
+                        <div className="game-status-tag">
+                            用时：
+                            <span>{gameTimeText}</span>
+                        </div>
+                        <div className="game-status-tag">
+                            得分: <span>{score}</span>
+                        </div>
+                    </>
+                ) : (
+                    <div className="game-status-tag">
+                        第<span>{level}</span>关
+                    </div>
+                )}
+            </h3>
 
             {curTheme.desc}
 
@@ -426,7 +584,7 @@ const App: FC = () => {
                 </div>
             </div>
             <div className="queue-container flex-container flex-center" />
-            {gameMode === 2 ? (
+            {gameMode == 2 ? (
                 <div className="flex-container flex-between">
                     <button className="flex-grow" onClick={pop}>
                         弹出
@@ -441,37 +599,36 @@ const App: FC = () => {
                         下一关
                     </button>
                 </div>
-            ) : null}
-
-            {/*bgm*/}
-            <button className="bgm-button" onClick={() => setBgmOn(!bgmOn)}>
-                {bgmOn ? '🔊' : '🔈'}
-                <audio
-                    ref={bgmRef}
-                    loop
-                    src={curTheme?.bgm || '/sound-disco.mp3'}
-                />
-            </button>
+            ) : (
+                <div className="flex-container flex-between">
+                    {/*<button className="flex-grow" onClick={pop}>*/}
+                    {/*    弹出(剩{gamePopTimesRemain}次)*/}
+                    {/*</button>*/}
+                    <button className="flex-grow" onClick={undo}>
+                        撤销(剩{gameUndoTimesRemain}次）
+                    </button>
+                    <button className="flex-grow" onClick={wash}>
+                        洗牌(剩{gameWashTimesRemain}次)
+                    </button>
+                    <button className="flex-grow" onClick={brokeGame}>
+                        什么破游戏！
+                    </button>
+                </div>
+            )}
 
             {gameMode === 0 && (
                 <div className="modal startup-modal">
                     <h1>请选择玩法</h1>
-                    <button
-                        onClick={() => {
-                            setGameMode(1);
-                            restart();
-                        }}
-                    >
-                        排位模式
+                    <button onClick={chooseGameMode(1, 1)}>
+                        排位模式(简单)
                     </button>
-                    <button
-                        onClick={() => {
-                            setGameMode(2);
-                            restart();
-                        }}
-                    >
-                        自定义模式
+                    <button onClick={chooseGameMode(1, 2)}>
+                        排位模式(中等)
                     </button>
+                    <button onClick={chooseGameMode(1, 3)}>
+                        排位模式(困难)
+                    </button>
+                    <button onClick={chooseGameMode(2, 0)}>自定义模式</button>
                 </div>
             )}
 
@@ -479,7 +636,11 @@ const App: FC = () => {
             {finished && (
                 <div className="modal">
                     <h1>{tipText}</h1>
-                    <button onClick={restart}>再来一次</button>
+                    {gameMode == 1 ? (
+                        <button>查看排行榜</button>
+                    ) : (
+                        <button onClick={() => restart()}>再来一次</button>
+                    )}
                 </div>
             )}
 

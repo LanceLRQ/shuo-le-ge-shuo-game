@@ -1,3 +1,7 @@
+body, html {
+    margin: 0;
+}
+
 #root {
     text-align: center;
     width: 100%;
@@ -76,16 +80,11 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     backdrop-filter: blur(10px);
     background-color: rgb(0 0 0 / 10%);
     top: 0;
     left: 0;
-
-    &.startup-modal {
-        justify-content: flex-start;
-
-    }
 
     > button {
         margin-top: 16px;
@@ -100,9 +99,49 @@
     padding: 4px;
     width: 36px;
     height: 36px;
+    border-radius: 0;
 }
 
 .zhenghuo-button {
     width: 100%;
     margin-top: 8px;
 }
+
+.game-status-box {
+    border: 2px solid #9f9f9f;
+    padding: 8px;
+}
+
+.game-status-tag {
+    &:not(:first-child) {
+        margin-left: 16px;
+    }
+
+    span {
+        display: inline-block;
+        border-radius: 4px;
+        background-color: #6f6f6f;
+        padding: 0 8px;
+        margin: 0 4px;
+    }
+}
+
+@media screen and (max-width: 500px) {
+    .game-status-box {
+        font-size: 14px;
+        flex-wrap: nowrap;
+        padding: 8px 4px;
+    }
+
+    .game-status-tag {
+        &:not(:first-child) {
+            margin-left: 4px;
+        }
+    }
+
+    span {
+        padding: 0 4px;
+        margin: 0 2px;
+    }
+}
+
