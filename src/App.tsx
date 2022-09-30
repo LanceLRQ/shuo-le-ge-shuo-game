@@ -288,7 +288,7 @@ const App: FC = () => {
                 const s = get(resp, 'score');
                 const total = get(resp, 'total') * 1;
                 const rank = get(resp, 'rank') * 1;
-                const percent = total > 0 ? (rank / total) * 100 : 0;
+                const percent = total > 0 ? ((total - rank) / total) * 100 : 0;
                 setRankTipText(
                     '最终得分：' +
                         s +
