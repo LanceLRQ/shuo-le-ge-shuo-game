@@ -15,7 +15,7 @@ import {
     randomString,
     waitTimeout,
 } from './utils';
-import { defaultTheme } from './themes/default';
+import { shuoshuoTheme } from './themes/shuoshuo';
 import { Icon, Theme } from './themes/interface';
 import dayjs, { Dayjs } from 'dayjs';
 import API from './api';
@@ -177,7 +177,7 @@ const RankDiffOptions: RankDiffOptionsType = {
 };
 
 const App: FC = () => {
-    const [curTheme, setCurTheme] = useState<Theme<any>>(defaultTheme);
+    const [curTheme, setCurTheme] = useState<Theme<any>>(shuoshuoTheme);
 
     const [scene, setScene] = useState<Scene>(makeScene(1, curTheme.icons));
     const [level, setLevel] = useState<number>(1);
