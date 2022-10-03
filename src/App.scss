@@ -89,6 +89,55 @@ body, html {
     > button {
         margin-top: 16px;
     }
+
+    &.rank-list {
+        background-color: rgb(0 0 0 / 90%);
+        color: white;
+    }
+}
+
+.rank-list-table {
+    width: 600px;
+    color: white;
+    .rank-list-row {
+        display: flex;
+        flex-direction: row;
+        font-size: 22px;
+        &:nth-child(2) {
+            font-size: 20px;
+        }
+        &:nth-child(3) {
+            font-size: 18px;
+        }
+        &:nth-child(n + 4) {
+            font-size: 16px;
+        }
+        .rank-list-col {
+            margin: 8px;
+            &:nth-child(1) {
+                flex: 0 0 auto;
+                text-align: left;
+                min-width: 24px;
+            }
+            &:nth-child(2) {
+                flex: 1 1 auto;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                text-align: left;
+            }
+            &:nth-child(3) {
+                flex: 0 0 auto;
+                text-align: center;
+                min-width: 60px;
+            }
+            &:nth-child(4) {
+                flex: 0 0 auto;
+                text-align: right;
+                min-width: 80px;
+            }
+        }
+    }
 }
 
 
@@ -137,6 +186,21 @@ h2 {
         background-color: #6f6f6f;
         padding: 0 8px;
         margin: 0 4px;
+    }
+}
+
+@media (prefers-color-scheme: light) {
+    .game-status-tag {
+        span {
+            background-color: #efefef;
+            color: white;
+        }
+    }
+}
+
+@media screen and (max-width: 600px) {
+    .rank-list-table {
+        width: 95%;
     }
 }
 

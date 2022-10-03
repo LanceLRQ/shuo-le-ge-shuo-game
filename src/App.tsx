@@ -1,6 +1,7 @@
 import React, {
     FC,
     MouseEventHandler,
+    ReactNode,
     SetStateAction,
     useEffect,
     useRef,
@@ -186,8 +187,12 @@ const App: FC = () => {
         Record<MySymbol['id'], number>
     >({});
     const [finished, setFinished] = useState<boolean>(false);
+    const [rankDialogVis, setRankDialogVis] = useState<boolean>(false);
+    const [rankDialogList, setRankDialogList] = useState<any[]>([]);
+    const [rankDialogLoadingTip, setRankDialogLoadingTip] =
+        useState<string>('');
     const [tipText, setTipText] = useState<string>('');
-    const [rankTipText, setRankTipText] = useState<string>('');
+    const [rankTipText, setRankTipText] = useState<ReactNode>(null);
     const [animating, setAnimating] = useState<boolean>(false);
 
     const [gameMode, setGameMode] = useState<number>(0); // 0 - 待选择 ； 1 - 排行模式； 2 - 自定义模式
@@ -209,7 +214,7 @@ const App: FC = () => {
     // 第一次点击时播放bgm
     const bgmRef = useRef<HTMLAudioElement>(null);
     const [bgmOn, setBgmOn] = useState<boolean>(false);
-    const [once, setOnce] = useState<boolean>(false);
+    // const [once, setOnce] = useState<boolean>(false);
     const [userName, setUserName] = useState<string>('');
 
     useEffect(() => {
@@ -273,8 +278,8 @@ const App: FC = () => {
         const timeUsed = Math.ceil(
             gameTimeUseRef.current.end.diff(gameTimeUseRef.current.start) / 1000
         );
-        if (timeUsed <= 120) {
-            setRankTipText('游戏时长小于2分钟，不计入排行榜');
+        if (timeUsed <= 60) {
+            setRankTipText('游戏时长小于1分钟，不计入排行榜');
             return;
         }
         setRankTipText('正在计算结果...');
@@ -286,15 +291,25 @@ const App: FC = () => {
         })
             .then((resp) => {
                 const s = get(resp, 'score');
+                const timeUsedRemote = get(resp, 'time_used');
                 const total = get(resp, 'total') * 1;
                 const rank = get(resp, 'rank') * 1;
-                const percent = total > 0 ? ((total - rank) / total) * 100 : 0;
+                const percent =
+                    total > 0 ? ((total - rank + 1) / total) * 100 : 0;
                 setRankTipText(
-                    '最终得分：' +
-                        s +
-                        '，打败了' +
-                        percent.toFixed(2) +
-                        '%的水晶蟹'
+                    <>
+                        <p>
+                            本次得分：{score}({gameTimeText})
+                        </p>
+                        <p>
+                            最佳得分：{s}(
+                            {dayjs
+                                .duration(timeUsedRemote * 1000)
+                                .format('HH:mm:ss')}
+                            )
+                        </p>
+                        <p>打败了{percent.toFixed(2)}%的水晶蟹</p>
+                    </>
                 );
             })
             .catch((e) => {
@@ -444,10 +459,10 @@ const App: FC = () => {
     const clickSymbol = async (idx: number) => {
         if (finished || animating) return;
 
-        if (!once) {
-            setBgmOn(true);
-            setOnce(true);
-        }
+        // if (!once) {
+        //     setBgmOn(true);
+        //     setOnce(true);
+        // }
 
         // 点击方块才开始计时
         if (gameMode == 1 && !gameTimer.current) {
@@ -606,6 +621,24 @@ const App: FC = () => {
             });
     };
 
+    const restartGame = () => {
+        setGameMode(0);
+        setFinished(false);
+    };
+
+    const showRankList = () => {
+        setRankDialogVis(true);
+        setRankDialogLoadingTip('载入中...');
+        API.GetRankList({})
+            .then((resp) => {
+                setRankDialogLoadingTip('');
+                setRankDialogList(resp as any[]);
+            })
+            .catch((e) => {
+                setRankDialogLoadingTip(e.message || '网络异常');
+            });
+    };
+
     return (
         <>
             {/*bgm*/}
@@ -720,6 +753,7 @@ const App: FC = () => {
                         排位模式(困难)
                     </button>
                     <button onClick={chooseGameMode(2, 0)}>自定义模式</button>
+                    <button onClick={showRankList}>查看排行榜</button>
                 </div>
             )}
 
@@ -727,16 +761,49 @@ const App: FC = () => {
             {finished && (
                 <div className="modal">
                     <h1>{tipText}</h1>
-                    {gameMode == 1 ? (
+                    {gameMode == 1 && (
                         <>
                             <div style={{ marginBottom: '16px' }}>
                                 {rankTipText}
                             </div>
-                            <button>查看排行榜</button>
+                            <button onClick={showRankList}>查看排行榜</button>
                         </>
-                    ) : (
-                        <button onClick={() => restart()}>再来一次</button>
                     )}
+                    <button onClick={restartGame}>再来一把</button>
+                </div>
+            )}
+
+            {/*排行榜*/}
+            {rankDialogVis && (
+                <div className="modal rank-list">
+                    <h1>排行榜</h1>
+                    {rankDialogLoadingTip ? (
+                        <div style={{ marginBottom: '16px' }}>
+                            {rankDialogLoadingTip}
+                        </div>
+                    ) : (
+                        <div className="rank-list-table">
+                            {rankDialogList.map((item, index) => {
+                                return (
+                                    <div className="rank-list-row">
+                                        <div className="rank-list-col">{index + 1}</div>
+                                        <div className="rank-list-col">
+                                            {item.name}
+                                        </div>
+                                        <div className="rank-list-col">
+                                            {item.score}
+                                        </div>
+                                        <div className="rank-list-col">
+                                            {dayjs.duration(item.time_used * 1000).format("HH:mm:ss")}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                    <button onClick={() => setRankDialogVis(false)}>
+                        关闭
+                    </button>
                 </div>
             )}
 
