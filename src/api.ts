@@ -4,7 +4,10 @@ import qs from 'qs';
 const apiFactory = axios.create({
     timeout: 30000,
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    baseURL: '/',
+    baseURL:
+        process.env.NODE_ENV === 'production'
+            ? 'https://shuoshuo.sikong.ren/game/slgs/'
+            : '/',
     withCredentials: true,
 });
 

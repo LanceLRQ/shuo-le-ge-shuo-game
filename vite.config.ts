@@ -8,4 +8,5 @@ export default defineConfig({
         host: true,
         port: 8082,
     },
+    base: process.env.NODE_ENV === 'production' ? '/game/slgs/' : '/',
 });
