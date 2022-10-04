@@ -15,8 +15,8 @@ const fishes = Object.entries(imagesUrls).map(([key, value]) => ({
 }));
 
 export const shuoshuoTheme: Theme<DefaultSoundNames> = {
-    title: '说说',
-    name: '说说',
+    title: '说了个说',
+    name: '说了个说',
     icons: fishes.map(({ name, content }) => ({
         name,
         content,
