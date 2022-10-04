@@ -642,14 +642,14 @@ const App: FC = () => {
     return (
         <>
             {/*bgm*/}
-            <button className="bgm-button" onClick={() => setBgmOn(!bgmOn)}>
-                {bgmOn ? '🔊' : '🔈'}
-                <audio
-                    ref={bgmRef}
-                    loop
-                    src={curTheme?.bgm || '/sound-disco.mp3'}
-                />
-            </button>
+            {/*<button className="bgm-button" onClick={() => setBgmOn(!bgmOn)}>*/}
+            {/*    {bgmOn ? '🔊' : '🔈'}*/}
+            {/*    <audio*/}
+            {/*        ref={bgmRef}*/}
+            {/*        loop*/}
+            {/*        src={curTheme?.bgm || '/sound-disco.mp3'}*/}
+            {/*    />*/}
+            {/*</button>*/}
 
             <div className="player-name">
                 <a
