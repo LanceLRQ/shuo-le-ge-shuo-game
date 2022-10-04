@@ -172,9 +172,9 @@ export interface RankDiffOptionsType {
 }
 // 配置排位难度
 const RankDiffOptions: RankDiffOptionsType = {
-    1: { levels: [1, 2, 3], range: 3, pop: 0, wash: 3, undo: 15 },
+    1: { levels: [1, 2, 3], range: 1, pop: 0, wash: 1, undo: 1 },
     2: { levels: [3, 4, 5], range: 6, pop: 0, wash: 3, undo: 20 },
-    3: { levels: [7, 8, 9], range: 9, pop: 0, wash: 3, undo: 30 },
+    3: { levels: [6, 7, 8, 9], range: 9, pop: 0, wash: 3, undo: 30 },
 };
 
 const App: FC = () => {
@@ -271,7 +271,12 @@ const App: FC = () => {
     const brokeGame = () => {
         if (!confirm('确定要结束游戏吗？分数将被提交')) return;
         setTipText('游戏结束');
+        if (gameTimer.current) {
+            clearTimeout(gameTimer.current);
+            gameTimer.current = null;
+        }
         setFinished(true);
+        reportGame();
     };
 
     const reportGame = () => {
