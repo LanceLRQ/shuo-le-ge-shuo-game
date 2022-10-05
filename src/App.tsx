@@ -22,7 +22,7 @@ import dayjs, { Dayjs } from 'dayjs';
 import API from './api';
 import { Base64 } from 'js-base64';
 import duration from 'dayjs/plugin/duration';
-import {PersonalInfo} from "./components/PersonalInfo";
+import { PersonalInfo } from './components/PersonalInfo';
 dayjs.extend(duration);
 
 // 最大关卡
@@ -208,6 +208,10 @@ const App: FC = () => {
     const [gameWashTimesRemain, setGameWashTimesRemain] = useState<number>(0);
     const [gameUndoTimesRemain, setGameUndoTimesRemain] = useState<number>(0);
     const [gameToken, setGameToken] = useState<string>('');
+
+    const [changeNameDialogVis, setChangeNameDialogVis] =
+        useState<boolean>(false);
+    const [changeNameText, setChangeNameText] = useState<string>('');
 
     // 音效
     const soundRefMap = useRef<Record<string, HTMLAudioElement>>({});
@@ -609,18 +613,18 @@ const App: FC = () => {
     };
 
     const changeUserName = () => {
-        const uname = prompt('请输入新的名字，10个字符内', userName);
-        if (uname == null || !(uname + '').trim()) {
+        if (changeNameText == null || !(changeNameText + '').trim()) {
             return;
         }
         API.ChangeName({
             data: {
-                name: uname,
+                name: changeNameText,
             },
         })
             .then(() => {
                 alert('修改成功');
-                setUserName(uname);
+                setUserName(changeNameText);
+                setChangeNameDialogVis(false);
             })
             .catch((e) => {
                 alert(e.message);
@@ -660,7 +664,10 @@ const App: FC = () => {
             <div className="player-name">
                 <a
                     href="javascript:void(0)"
-                    onClick={changeUserName}
+                    onClick={() => {
+                        setChangeNameText(userName);
+                        setChangeNameDialogVis(true);
+                    }}
                     style={{ marginRight: '8px' }}
                 >
                     ✏️
@@ -763,6 +770,22 @@ const App: FC = () => {
                 </div>
             )}
 
+            {changeNameDialogVis && (
+                <div className="modal startup-modal">
+                    <h3>请输入新名字</h3>
+                    <input
+                        placeholder="10个字符内"
+                        maxlength={10}
+                        value={changeNameText}
+                        onChange={(e) => setChangeNameText(e.target.value)}
+                    ></input>
+                    <button onClick={changeUserName}>提交</button>
+                    <button onClick={() => setChangeNameDialogVis(false)}>
+                        取消
+                    </button>
+                </div>
+            )}
+
             {/*提示弹窗*/}
             {finished && (
                 <div className="modal">
@@ -791,8 +814,13 @@ const App: FC = () => {
                         <div className="rank-list-table">
                             {rankDialogList.map((item, index) => {
                                 return (
-                                    <div className="rank-list-row">
-                                        <div className="rank-list-col">{index + 1}</div>
+                                    <div
+                                        key={`rank_${item.name}_${index}`}
+                                        className="rank-list-row"
+                                    >
+                                        <div className="rank-list-col">
+                                            {index + 1}
+                                        </div>
                                         <div className="rank-list-col">
                                             {item.name}
                                         </div>
@@ -800,7 +828,9 @@ const App: FC = () => {
                                             {item.score}
                                         </div>
                                         <div className="rank-list-col">
-                                            {dayjs.duration(item.time_used * 1000).format("HH:mm:ss")}
+                                            {dayjs
+                                                .duration(item.time_used * 1000)
+                                                .format('HH:mm:ss')}
                                         </div>
                                     </div>
                                 );
