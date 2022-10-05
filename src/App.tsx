@@ -319,7 +319,10 @@ const App: FC = () => {
                                 .format('HH:mm:ss')}
                             )
                         </p>
-                        <p>打败了{percent.toFixed(2)}%的水晶蟹</p>
+                        <p>
+                            排第{{ rank }}名，打败了{percent.toFixed(2)}
+                            %的水晶蟹
+                        </p>
                     </>
                 );
             })
