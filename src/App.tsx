@@ -563,7 +563,6 @@ const App: FC = () => {
                     return;
                 }
                 targetLevel = gameLevels[gameLevelsCur] + 1;
-                setLevel(targetLevel);
                 setGameLevelsCur(gameLevelsCur + 1);
             } else {
                 // 胜利
@@ -573,6 +572,7 @@ const App: FC = () => {
                     return;
                 }
             }
+            setLevel(targetLevel);
             setQueue([]);
             checkCover(makeScene(targetLevel, curTheme.icons));
         } else {

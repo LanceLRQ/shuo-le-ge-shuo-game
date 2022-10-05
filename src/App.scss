@@ -107,6 +107,8 @@ body, html {
 .rank-list-table {
     width: 600px;
     color: white;
+    max-height: 400px;
+    overflow-y: auto;
     .rank-list-row {
         display: flex;
         flex-direction: row;
