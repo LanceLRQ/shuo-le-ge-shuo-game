@@ -83,7 +83,6 @@ body, html {
     justify-content: flex-start;
     backdrop-filter: blur(10px);
     background: rgba(0, 0, 0, 0.1);
-    background: #000000;
     top: 0;
     left: 0;
 
@@ -101,7 +100,6 @@ body, html {
 
     &.rank-list {
         background: rgba(0, 0, 0, 0.9);
-        background: #000000;
         color: white;
     }
 }
