@@ -320,7 +320,7 @@ const App: FC = () => {
                             )
                         </p>
                         <p>
-                            排第{{ rank }}名，打败了{percent.toFixed(2)}
+                            排第{rank}名，打败了{percent.toFixed(2)}
                             %的水晶蟹
                         </p>
                     </>
