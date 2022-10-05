@@ -666,16 +666,16 @@ const App: FC = () => {
             {/*</button>*/}
 
             <div className="player-name">
-                {/*<a*/}
-                {/*    href="javascript:void(0)"*/}
-                {/*    onClick={() => {*/}
-                {/*        setChangeNameText(userName);*/}
-                {/*        setChangeNameDialogVis(true);*/}
-                {/*    }}*/}
-                {/*    style={{ marginRight: '8px' }}*/}
-                {/*>*/}
-                {/*    ✏️*/}
-                {/*</a>*/}
+                <a
+                    href="javascript:void(0)"
+                    onClick={() => {
+                        setChangeNameText(userName);
+                        setChangeNameDialogVis(true);
+                    }}
+                    style={{ marginRight: '8px' }}
+                >
+                    ✏️
+                </a>
                 {userName}
             </div>
 
