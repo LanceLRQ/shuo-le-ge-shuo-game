@@ -22,6 +22,7 @@ import dayjs, { Dayjs } from 'dayjs';
 import API from './api';
 import { Base64 } from 'js-base64';
 import duration from 'dayjs/plugin/duration';
+import {PersonalInfo} from "./components/PersonalInfo";
 dayjs.extend(duration);
 
 // 最大关卡
@@ -811,6 +812,8 @@ const App: FC = () => {
                     </button>
                 </div>
             )}
+
+            <PersonalInfo />
 
             {/*音效*/}
             {curTheme.sounds.map((sound) => (

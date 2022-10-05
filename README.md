@@ -1,3 +1,11 @@
+# 二创：说了个说 
+
+游戏地址：https://shuoshuo.sikong.ren/game/slgs
+
+相关主播直播间：https://live.bilibili.com/9234980 (@说说Crystal)
+
+---
+
 # 能够解出来的 "羊了个羊" 小游戏 Demo
 
 <p>
