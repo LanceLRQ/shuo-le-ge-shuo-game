@@ -82,8 +82,8 @@ body, html {
     align-items: center;
     justify-content: flex-start;
     backdrop-filter: blur(10px);
-    background-color: rgb(0 0 0 / 10%);
-    background-color: rgba(0, 0, 0, 0.1);
+    background: rgba(0, 0, 0, 0.1);
+    background: #000000;
     top: 0;
     left: 0;
 
@@ -100,8 +100,8 @@ body, html {
     }
 
     &.rank-list {
-        background-color: rgb(0 0 0 / 90%);
-        background-color: rgba(0, 0, 0, 0.9);
+        background: rgba(0, 0, 0, 0.9);
+        background: #000000;
         color: white;
     }
 }
