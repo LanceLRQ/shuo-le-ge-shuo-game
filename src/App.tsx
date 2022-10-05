@@ -177,6 +177,7 @@ const RankDiffOptions: RankDiffOptionsType = {
     1: { levels: [1, 2, 3], range: 1, pop: 0, wash: 1, undo: 1 },
     2: { levels: [3, 4, 5], range: 6, pop: 0, wash: 3, undo: 20 },
     3: { levels: [6, 7, 8, 9], range: 9, pop: 0, wash: 3, undo: 30 },
+    4: { levels: [16, 17, 18, 19], range: 12, pop: 0, wash: 0, undo: 0 },
 };
 
 const App: FC = () => {
@@ -760,14 +761,11 @@ const App: FC = () => {
             {gameMode === 0 && (
                 <div className="modal startup-modal">
                     <h1>请选择玩法</h1>
-                    <button onClick={chooseGameMode(1, 1)}>
-                        排位模式(简单)
-                    </button>
-                    <button onClick={chooseGameMode(1, 2)}>
-                        排位模式(中等)
-                    </button>
-                    <button onClick={chooseGameMode(1, 3)}>
-                        排位模式(困难)
+                    <button onClick={chooseGameMode(1, 1)}>排位(简单)</button>
+                    <button onClick={chooseGameMode(1, 2)}>排位(中等)</button>
+                    <button onClick={chooseGameMode(1, 3)}>排位(困难)</button>
+                    <button onClick={chooseGameMode(1, 4)}>
+                        排位(极限生存)
                     </button>
                     <button onClick={chooseGameMode(2, 0)}>自定义模式</button>
                     <button onClick={showRankList}>查看排行榜</button>
