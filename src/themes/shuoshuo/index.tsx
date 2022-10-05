@@ -11,7 +11,7 @@ const fishes = Object.entries(imagesUrls).map(([key, value]) => ({
     name: key.slice(9, -4),
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    content: <img src={value} alt="" />,
+    content: <img src={value} alt="" draggable="false" />,
 }));
 
 export const shuoshuoTheme: Theme<DefaultSoundNames> = {

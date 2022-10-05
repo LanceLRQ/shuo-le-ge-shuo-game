@@ -149,15 +149,16 @@ const Symbol: FC<SymbolProps> = ({ x, y, icon, isCover, status, onClick }) => {
         >
             <div
                 className="symbol-inner"
+                draggable="false"
                 style={{ opacity: isCover ? 0.4 : 1 }}
             >
                 {typeof icon.content === 'string' ? (
                     icon.content.startsWith('http') ? (
                         /*图片外链*/
-                        <img src={icon.content} alt="" />
+                        <img src={icon.content} alt="" draggable="false" />
                     ) : (
                         /*字符表情*/
-                        <i>{icon.content}</i>
+                        <i draggable="false">{icon.content}</i>
                     )
                 ) : (
                     /*ReactNode*/
