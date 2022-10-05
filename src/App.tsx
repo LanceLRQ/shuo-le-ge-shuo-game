@@ -775,7 +775,7 @@ const App: FC = () => {
                     <h3>请输入新名字</h3>
                     <input
                         placeholder="10个字符内"
-                        maxlength={10}
+                        maxLength={10}
                         value={changeNameText}
                         onChange={(e) => setChangeNameText(e.target.value)}
                     ></input>
